@@ -1,9 +1,11 @@
-#![feature(decl_macro)]
 pub mod page;
 
 use dotenv::dotenv;
 use page::{Auction, Page};
-use rocket::{State, fs::{FileServer,relative}};
+use rocket::{
+    fs::{relative, FileServer},
+    State,
+};
 use std::{collections::HashMap, env};
 
 #[macro_use]
@@ -21,11 +23,10 @@ pub trait GetCaseInsensitive<T> {
     fn get_case_insensitive(&self, key: &str) -> T;
 }
 
-
 #[get("/items")]
-fn items(item_auction_map: &State<HashMap<String, Vec<Auction>>>) -> String{
-   let val : Vec<String> =  item_auction_map.keys().cloned().collect();
-   val.join("<br>")
+fn items(item_auction_map: &State<HashMap<String, Vec<Auction>>>) -> String {
+    let val: Vec<String> = item_auction_map.keys().cloned().collect();
+    val.join("<br>")
 }
 
 #[launch]
