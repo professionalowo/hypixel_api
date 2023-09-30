@@ -1,0 +1,21 @@
+[package]
+name = "hypixel_api"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+base64 = "0.21.4"
+dotenv = "0.15.0"
+dotenv_codegen = "0.15.0"
+error-chain = "0.12.4"
+exitfailure = "0.5.1"
+futures = "0.3.28"
+reqwest = {version = "*",features = ["json"]}
+rocket = { version = "=0.5.0-rc.3", features = ["json"] }
+serde = "1.0.188"
+serde_derive = "1.0.188"
+serde_json = "1.0.107"
+structopt = "0.3.26"
+tokio = {version = "*",features = ["full"]}
