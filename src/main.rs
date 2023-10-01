@@ -1,13 +1,16 @@
+pub mod items;
 pub mod page;
 
 use dotenv::dotenv;
-use page::{Auction, Page};
+use page::Auction;
 use rocket::{
     fs::{relative, FileServer},
     serde::json::Json,
     State,
 };
 use std::{collections::HashMap, env};
+
+use crate::items::ItemsCache;
 
 #[macro_use]
 extern crate rocket;
@@ -25,33 +28,29 @@ pub trait GetCaseInsensitive<T> {
 }
 
 #[get("/items")]
-fn items(item_auction_map: &State<HashMap<String, Vec<Auction>>>) -> Json<Vec<String>> {
-    let val: Vec<String> = item_auction_map.keys().cloned().collect();
+fn get_all_items(items: &State<ItemsCache>) -> Json<Vec<String>> {
+    let val: Vec<String> = items.map.lock().unwrap().keys().cloned().collect();
     Json(val)
 }
 
 #[get("/search?<search>")]
-fn search(
-    search: Option<String>,
-    item_auction_map: &State<HashMap<String, Vec<Auction>>>,
-) -> Json<Vec<Auction>> {
+fn search_item(search: Option<String>, items: &State<ItemsCache>) -> Json<Vec<Auction>> {
     match search {
         Some(x) => {
-            let auctions = item_auction_map.get_case_insensitive(&x);
+            let auctions = items.map.lock().ok().unwrap().get_case_insensitive(&x);
             Json(auctions)
-        },
-        None => Json(Vec::new())
+        }
+        None => Json(Vec::new()),
     }
-    
 }
 
 #[launch]
 async fn launch() -> _ {
     dotenv().ok();
     let api_key: String = env::var("API_KEY").ok().unwrap();
-    let item_auction_map = Page::get_map(&api_key).await.ok().unwrap();
+    let items = ItemsCache::new(api_key).await;
     rocket::build()
-        .manage(item_auction_map)
+        .manage(items)
         .mount("/", FileServer::from(relative!("static")))
-        .mount("/", routes![items, search])
+        .mount("/", routes![get_all_items, search_item])
 }

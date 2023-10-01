@@ -16,7 +16,7 @@ pub struct Page {
 }
 
 impl Page {
-    pub async fn get_page(page_index: u8, api_key: String) -> Result<Self, ExitFailure> {
+    async fn get_page(page_index: u8, api_key: String) -> Result<Self, ExitFailure> {
         let url = format!(
             "https://api.hypixel.net/skyblock/auctions?page={}&ApiKey={}",
             page_index, api_key
@@ -28,11 +28,11 @@ impl Page {
         Ok(res)
     }
 
-    pub async fn get_number_of_pages(api_key: &str) -> Result<u8, ExitFailure> {
+    async fn get_number_of_pages(api_key: &str) -> Result<u8, ExitFailure> {
         let page = Self::get_page(0, api_key.into()).await?;
         Ok(page.totalPages)
     }
-    pub async fn get_all_pages_parallel(api_key: &str) -> Result<Vec<Self>, ExitFailure> {
+    async fn get_all_pages_parallel(api_key: &str) -> Result<Vec<Self>, ExitFailure> {
         let number_of_pages = Self::get_number_of_pages(api_key).await?;
         let mut tasks = Vec::with_capacity(number_of_pages.into());
         for i in 0..number_of_pages {
@@ -45,18 +45,7 @@ impl Page {
         Ok(pages)
     }
 
-    pub async fn get_all_pages_concurrent(api_key: &str) -> Result<Vec<Self>, ExitFailure> {
-        let number_of_pages = Self::get_number_of_pages(api_key).await?;
-        let mut pages: Vec<Page> = Vec::with_capacity(number_of_pages.into());
-        for i in 0..number_of_pages {
-            println!("Getting page {}", &i);
-            let page = Self::get_page(i, api_key.into()).await?;
-            pages.push(page);
-        }
-        Ok(pages)
-    }
-
-    pub fn map_page_vec_to_hashmap(
+    fn map_page_vec_to_hashmap(
         pages: &Vec<Self>,
     ) -> Result<HashMap<String, Vec<Auction>>, ExitFailure> {
         let mut map = HashMap::new();
