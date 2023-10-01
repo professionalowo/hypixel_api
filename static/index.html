@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Rust API</title>
-    <link rel="shortcut icon" type="image/png" href="/cuddlyferris.png">
+    <link rel="shortcut icon" type="image/png" href="/cuddlyferris.png" sizes="32x32">
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
       rel="stylesheet"
@@ -15,12 +15,12 @@
       src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
       integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
       crossorigin="anonymous"
+      defer
     ></script>
     <script src="https://unpkg.com/htmx.org@1.9.6"></script>
   </head>
   <body class="bg-dark font-white text-light">
     <h1>HypixelApi in Rust!</h1>
-    <h2>Let's get rusty!</h2>
     <div>
       <button
         class="btn btn-primary p-1"
@@ -31,6 +31,20 @@
       >
         Load all items!
       </button>
+    </div>
+    <div>
+      <form class="bg-slate-500 rounded p-2" method="POST" action="/search">
+        <input
+          class="form-control bg-slate-700 text-slate-200 rounded border-2 border-transparent hover:border-slate-200"
+          type="search"
+          name="search"
+          placeholder="Begin typing to search items..."
+          hx-get="/search"
+          hx-trigger="keyup changed delay:500ms, search"
+          hx-target="#target"
+          hx-swap="innerHTML"
+        />
+      </form>
     </div>
     <div id="target"></div>
   </body>

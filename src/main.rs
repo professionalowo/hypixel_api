@@ -4,6 +4,7 @@ use dotenv::dotenv;
 use page::{Auction, Page};
 use rocket::{
     fs::{relative, FileServer},
+    serde::json::Json,
     State,
 };
 use std::{collections::HashMap, env};
@@ -24,9 +25,24 @@ pub trait GetCaseInsensitive<T> {
 }
 
 #[get("/items")]
-fn items(item_auction_map: &State<HashMap<String, Vec<Auction>>>) -> String {
+fn items(item_auction_map: &State<HashMap<String, Vec<Auction>>>) -> Json<Vec<String>> {
     let val: Vec<String> = item_auction_map.keys().cloned().collect();
-    val.join("<br>")
+    Json(val)
+}
+
+#[get("/search?<search>")]
+fn search(
+    search: Option<String>,
+    item_auction_map: &State<HashMap<String, Vec<Auction>>>,
+) -> Json<Vec<Auction>> {
+    match search {
+        Some(x) => {
+            let auctions = item_auction_map.get_case_insensitive(&x);
+            Json(auctions)
+        },
+        None => Json(Vec::new())
+    }
+    
 }
 
 #[launch]
@@ -37,5 +53,5 @@ async fn launch() -> _ {
     rocket::build()
         .manage(item_auction_map)
         .mount("/", FileServer::from(relative!("static")))
-        .mount("/", routes![items])
+        .mount("/", routes![items, search])
 }
