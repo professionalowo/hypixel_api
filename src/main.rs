@@ -6,7 +6,7 @@ use page::Auction;
 use rocket::{
     fs::{relative, FileServer},
     serde::json::Json,
-    State,
+    State, fairing::AdHoc,
 };
 use std::{collections::HashMap, env};
 
