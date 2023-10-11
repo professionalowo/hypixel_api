@@ -61,6 +61,7 @@ impl Page {
         }
         Ok(map)
     }
+
     pub async fn get_map(api_key: &str) -> Result<HashMap<String, Vec<Auction>>, ExitFailure> {
         let pages = Self::get_all_pages_parallel(api_key).await?;
         let map = Self::map_page_vec_to_hashmap(&pages).ok().unwrap();

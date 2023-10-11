@@ -6,9 +6,15 @@ use page::Auction;
 use rocket::{
     fs::{relative, FileServer},
     serde::json::Json,
-    State, fairing::AdHoc,
+    State,
 };
-use std::{collections::HashMap, env};
+use std::{
+    collections::HashMap,
+    env,
+    sync::Arc,
+    time::{Duration, Instant},
+};
+use tokio::time::sleep;
 
 use crate::items::ItemsCache;
 
@@ -27,20 +33,34 @@ pub trait GetCaseInsensitive<T> {
     fn get_case_insensitive(&self, key: &str) -> T;
 }
 
+async fn update_cache_periodically(cache: Arc<ItemsCache>, update_interval: u64) {
+    loop {
+        println!("Updating cache");
+        let start = Instant::now();
+        cache.update().await;
+        let duration = start.elapsed();
+        println!("Updated cache in {:#?} seconds", duration);
+        sleep(Duration::from_secs(update_interval)).await
+    }
+}
+
 #[get("/items")]
-fn get_all_items(items: &State<ItemsCache>) -> Json<Vec<String>> {
-    let val: Vec<String> = items.map.lock().unwrap().keys().cloned().collect();
+async fn get_all_items(items: &State<Arc<ItemsCache>>) -> Json<Vec<String>> {
+    let val: Vec<String> = items.map.lock().await.keys().cloned().collect();
     Json(val)
 }
 
 #[get("/search?<search>")]
-fn search_item(search: Option<String>, items: &State<ItemsCache>) -> Json<Vec<Auction>> {
+async fn search_item(
+    search: Option<String>,
+    items: &State<Arc<ItemsCache>>,
+) -> Option<Json<Vec<Auction>>> {
     match search {
-        Some(x) => {
-            let auctions = items.map.lock().ok().unwrap().get_case_insensitive(&x);
-            Json(auctions)
-        }
-        None => Json(Vec::new()),
+        Some(item_name) => {
+            let auctions = items.map.lock().await.get_case_insensitive(&item_name);
+            Some(Json(auctions))
+        },
+        None => None,
     }
 }
 
@@ -48,9 +68,13 @@ fn search_item(search: Option<String>, items: &State<ItemsCache>) -> Json<Vec<Au
 async fn launch() -> _ {
     dotenv().ok();
     let api_key: String = env::var("API_KEY").ok().unwrap();
-    let items = ItemsCache::new(api_key).await;
+    let cache = Arc::new(ItemsCache::new(api_key).await);
+    let cache_clone = Arc::clone(&cache);
+    tokio::spawn(async move {
+        update_cache_periodically(cache_clone, 60).await;
+    });
     rocket::build()
-        .manage(items)
+        .manage(cache)
         .mount("/", FileServer::from(relative!("static")))
         .mount("/", routes![get_all_items, search_item])
 }
